@@ -16,7 +16,7 @@ def home():
         }
         .icon {
             position: absolute;
-            width: 65px;
+            width: 70px;
             cursor: pointer;
             transition: transform 0.2s ease;
         }
