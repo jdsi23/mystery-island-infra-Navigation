@@ -2,22 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>Mystery Island Navigation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Mystery Island Navigation</title>
   </head>
-  <body class="bg-gray-100 text-gray-900">
-    <div class="max-w-4xl mx-auto p-6">
-      <h1 class="text-4xl font-bold mb-4 text-center">🗺️ Mystery Island Navigation</h1>
 
-      <form action="/directions" method="get" class="mb-6">
+  <body class="bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-screen text-gray-900">
+
+    <div class="max-w-5xl mx-auto p-6">
+      <h1 class="text-5xl font-extrabold text-center mb-8">🗺️ Mystery Island Navigation</h1>
+
+      <form id="nav-form" class="mb-8">
         <label for="to" class="block text-lg font-medium mb-2">Where would you like to go?</label>
         <input
-          type="text"
           id="to"
           name="to"
+          type="text"
           placeholder="e.g., Volcano Coaster"
-          class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          class="w-full border border-gray-300 rounded px-4 py-2 focus:ring-2 focus:ring-blue-400"
           required
         />
         <button
@@ -28,26 +30,96 @@
         </button>
       </form>
 
-      <div id="directions-output" class="text-lg"></div>
+      <div id="directions-output" class="text-lg mb-8"></div>
+
+      <div id="recent-routes" class="mb-8">
+        <h2 class="text-xl font-semibold">Recent Routes:</h2>
+        <ul id="route-history" class="list-disc list-inside text-sm text-gray-700"></ul>
+      </div>
+    </div>
+
+    <!-- Chatbot button -->
+    <div class="fixed bottom-6 right-6">
+      <button id="chat-toggle" class="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded-full shadow-lg">
+        💬 Chat with Finn
+      </button>
+    </div>
+
+    <!-- Chatbot UI -->
+    <div id="chatbot" class="hidden fixed bottom-20 right-6 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80">
+      <h3 class="font-semibold mb-2">Finn Chatbot</h3>
+      <div id="chat-log" class="h-40 overflow-y-auto text-sm mb-2 border p-2 bg-gray-50 rounded"></div>
+      <input id="chat-input" class="w-full border rounded px-2 py-1" placeholder="Ask me anything..." />
     </div>
 
     <script>
-      const form = document.querySelector("form");
+      const form = document.getElementById("nav-form");
       const output = document.getElementById("directions-output");
+      const historyList = document.getElementById("route-history");
+
+      function saveToHistory(destination) {
+        let history = JSON.parse(localStorage.getItem("routeHistory")) || [];
+        history.unshift(destination);
+        history = history.slice(0, 5);
+        localStorage.setItem("routeHistory", JSON.stringify(history));
+        renderHistory();
+      }
+
+      function renderHistory() {
+        const history = JSON.parse(localStorage.getItem("routeHistory")) || [];
+        historyList.innerHTML = history.map(loc => `<li>${loc}</li>`).join("");
+      }
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const to = document.getElementById("to").value;
+        const to = document.getElementById("to").value.trim();
+        if (!to) return;
+
         const res = await fetch(`/directions?to=${encodeURIComponent(to)}`);
         const data = await res.json();
 
-        output.innerHTML = `
-          <h2 class="text-2xl font-semibold mb-2">Route to ${data.destination}:</h2>
-          <ul class="list-disc list-inside">
-            ${data.route.map((step) => `<li>${step}</li>`).join("")}
-          </ul>
-        `;
+        output.innerHTML = "";
+
+        const title = document.createElement("h2");
+        title.className = "text-2xl font-semibold mb-2";
+        title.textContent = `Route to ${data.destination}:`;
+        output.appendChild(title);
+
+        const ul = document.createElement("ul");
+        ul.className = "list-disc list-inside";
+        data.route.forEach((step, i) => {
+          setTimeout(() => {
+            const li = document.createElement("li");
+            li.textContent = step;
+            ul.appendChild(li);
+            output.scrollTop = output.scrollHeight;
+          }, i * 600);
+        });
+
+        output.appendChild(ul);
+        saveToHistory(data.destination);
       });
+
+      document.getElementById("chat-toggle").onclick = () => {
+        const chatbot = document.getElementById("chatbot");
+        chatbot.classList.toggle("hidden");
+      };
+
+      const chatInput = document.getElementById("chat-input");
+      const chatLog = document.getElementById("chat-log");
+
+      chatInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          const msg = chatInput.value;
+          chatLog.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+          chatLog.innerHTML += `<div><b>Finn:</b> Hmm... let me check the scrolls for that!</div>`;
+          chatInput.value = "";
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+      });
+
+      renderHistory();
     </script>
+
   </body>
 </html>
