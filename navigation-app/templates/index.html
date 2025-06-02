@@ -6,24 +6,49 @@
     <title>Mystery Island Navigation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Precompiled Tailwind Utility Classes (usually better imported from CSS) */
-      /* NOTE: This can be removed if using Tailwind CDN or CLI properly */
-      /* Your inline Tailwind utility block remains here as requested */
-      /* ... (omitted for brevity, keep if needed for offline use) ... */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+      .tooltip {
+        position: absolute;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 6px 10px;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        display: none;
+      }
+      .dark body {
+        background-color: #1a202c;
+        color: white;
+      }
     </style>
   </head>
-
-  <body class="bg-gradient-to-b from-blue-100 to-pink-100 text-gray-900 min-h-screen">
+  <body class="bg-gradient-to-b from-blue-100 to-pink-100 text-gray-900 min-h-screen transition duration-300">
     <div class="max-w-5xl mx-auto p-6">
-      <h1 class="text-5xl font-extrabold text-center mb-8">
-        🗺️ Mystery Island Navigation
-      </h1>
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-5xl font-extrabold text-center w-full">🗺️ Mystery Island Navigation</h1>
+        <button
+          id="darkToggle"
+          class="absolute right-8 top-8 text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+        >
+          Toggle Dark Mode
+        </button>
+      </div>
 
-      <!-- Search Form -->
       <form id="nav-form" class="mb-6">
-        <label for="to" class="block text-lg font-medium mb-2">
-          Where would you like to go?
-        </label>
+        <label for="to" class="block text-lg font-medium mb-2">Where would you like to go?</label>
         <input
           id="to"
           name="to"
@@ -39,68 +64,80 @@
         </button>
       </form>
 
-      <!-- Interactive Map -->
       <div
         class="relative border rounded overflow-hidden shadow-lg w-full max-w-3xl mx-auto mb-6 bg-white"
       >
         <img
           src="https://i.postimg.cc/7hTkGYNG/map.png"
-          class="w-full h-full object-cover"
+          class="w-full h-auto object-cover"
           alt="Mystery Island Map"
         />
         <img
           src="https://i.postimg.cc/HswLBBQJ/icon-volcano.png"
-          class="absolute top-[14%] left-[16%] w-10 h-10 cursor-pointer"
-          title="🔥 Ashen Secrets 🔥"
+          class="absolute top-[14%] left-[20%] w-10 h-10 cursor-pointer"
+          title="Ashen Secrets: Ancient lava tunnels echo with dragon whispers"
           onclick="fillDestination('volcano')"
         />
         <img
           src="https://i.postimg.cc/nr8H1DrY/icon-maze.png"
-          class="absolute top-[58%] left-[15%] w-10 h-10 cursor-pointer"
-          title="🌿 Maze of Whisper 🌿"
+          class="absolute top-[45%] left-[10%] w-10 h-10 cursor-pointer"
+          title="Maze of Whisper: Faint whispers guide those who dare enter"
           onclick="fillDestination('maze')"
         />
         <img
           src="https://i.postimg.cc/J7B0B105/icon-boat.png"
-          class="absolute top-[75%] left-[73%] w-10 h-10 cursor-pointer"
-          title="🚤 The Forgotten Current 🚤"
+          class="absolute top-[75%] left-[38%] w-10 h-10 cursor-pointer"
+          title="The Forgotten Current: Rumored sea path to the spirit realm"
           onclick="fillDestination('boat')"
         />
         <img
           src="https://i.postimg.cc/QdNjSs8P/icon-resort.png"
-          class="absolute top-[15%] left-[80%] w-10 h-10 cursor-pointer"
-          title="🌺 Secrets of the Sands 🌺"
+          class="absolute top-[20%] left-[65%] w-10 h-10 cursor-pointer"
+          title="Secrets of the Sands: An enchanted oasis of memory and mirage"
           onclick="fillDestination('resort')"
         />
       </div>
 
-      <!-- Directions Output -->
       <div id="directions-output" class="text-lg mb-6"></div>
 
-      <!-- Recent Routes -->
       <div id="recent-routes" class="mb-4">
         <h2 class="text-xl font-semibold">Recent Routes:</h2>
         <ul id="route-history" class="list-disc list-inside text-sm text-gray-700"></ul>
       </div>
     </div>
 
+    <button
+      id="chat-toggle"
+      title="Chat with Finn"
+      class="fixed bottom-6 right-6 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-full shadow-lg z-50"
+    >
+      💬 Finn
+    </button>
+
+    <div
+      id="chatbot"
+      class="hidden fixed bottom-20 right-6 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50"
+    >
+      <h3 class="font-semibold mb-2">Finn Chatbot</h3>
+      <div
+        id="chat-log"
+        class="h-40 overflow-y-auto text-sm mb-2 border p-2 bg-gray-50 rounded"
+      ></div>
+      <input
+        id="chat-input"
+        class="w-full border rounded px-2 py-1"
+        placeholder="Ask me anything..."
+      />
+    </div>
+
     <script>
       const form = document.getElementById("nav-form");
       const output = document.getElementById("directions-output");
       const historyList = document.getElementById("route-history");
-
-      function saveToHistory(destination) {
-        let history = JSON.parse(localStorage.getItem("routeHistory")) || [];
-        history.unshift(destination);
-        history = history.slice(0, 5);
-        localStorage.setItem("routeHistory", JSON.stringify(history));
-        renderHistory();
-      }
-
-      function renderHistory() {
-        const history = JSON.parse(localStorage.getItem("routeHistory")) || [];
-        historyList.innerHTML = history.map(loc => `<li>${loc}</li>`).join("");
-      }
+      const chatToggle = document.getElementById("chat-toggle");
+      const chatbot = document.getElementById("chatbot");
+      const chatInput = document.getElementById("chat-input");
+      const chatLog = document.getElementById("chat-log");
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -111,7 +148,6 @@
         const data = await res.json();
 
         output.innerHTML = "";
-
         const title = document.createElement("h2");
         title.className = "text-2xl font-semibold mb-2";
         title.textContent = `Route to ${data.destination}:`;
@@ -123,6 +159,7 @@
           setTimeout(() => {
             const li = document.createElement("li");
             li.textContent = step;
+            li.className = "animate-fadeIn";
             ul.appendChild(li);
           }, i * 600);
         });
@@ -131,9 +168,37 @@
         saveToHistory(data.destination);
       });
 
+      function saveToHistory(destination) {
+        let history = JSON.parse(localStorage.getItem("routeHistory")) || [];
+        history.unshift(destination);
+        history = history.slice(0, 5);
+        localStorage.setItem("routeHistory", JSON.stringify(history));
+        renderHistory();
+      }
+
+      function renderHistory() {
+        const history = JSON.parse(localStorage.getItem("routeHistory")) || [];
+        historyList.innerHTML = history.map((loc) => `<li>${loc}</li>`).join("");
+      }
+
       function fillDestination(location) {
         document.getElementById("to").value = location;
       }
+
+      chatToggle.onclick = () => chatbot.classList.toggle("hidden");
+
+      chatInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          const msg = chatInput.value;
+          chatLog.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+          chatLog.innerHTML += `<div><b>Finn:</b> Hmm... let me check the scrolls for that!</div>`;
+          chatInput.value = "";
+        }
+      });
+
+      document.getElementById("darkToggle").onclick = () => {
+        document.body.classList.toggle("dark");
+      };
 
       renderHistory();
     </script>
