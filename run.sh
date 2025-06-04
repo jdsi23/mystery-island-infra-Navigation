@@ -23,4 +23,9 @@ echo "[+] Running deploy.sh twice..."
 ./deploy.sh
 ./deploy.sh
 
+echo "[+] Fetching Load Balancer DNS names..."
+aws elbv2 describe-load-balancers \
+  --query 'LoadBalancers[*].DNSName' \
+  --output text
+
 echo "[✓] All steps completed successfully."
