@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mystery Island Navigation</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
     <style>
       @keyframes fadeIn {
         from {
@@ -59,38 +73,9 @@
       </form>
 
       <div
-        class="relative border rounded overflow-hidden shadow-lg w-full max-w-3xl mx-auto mb-6 bg-white"
-      >
-        <img
-          src="https://i.postimg.cc/V62JSv3N/map.png"
-          class="w-full h-auto object-cover"
-          alt="Mystery Island Map"
-        />
-        <img
-          src="https://i.postimg.cc/JnNfXdFB/icon-volcano.png"
-          class="absolute top-[14%] left-[17%] h-[10%] aspect-square cursor-pointer"
-          title="Ashen Secrets: Ancient lava tunnels echo with dragon whispers"
-          onclick="fillDestination('volcano')"
-        />
-        <img
-          src="https://i.postimg.cc/xjyQNcrF/icon-maze.png"
-          class="absolute top-[58%] left-[14%] h-[10%] cursor-pointer"
-          title="Maze of Whisper: Faint whispers guide those who dare enter"
-          onclick="fillDestination('maze')"
-        />
-        <img
-          src="https://i.postimg.cc/7ZQwPdvH/icon-boat.png"
-          class="absolute top-[72%] left-[74%] h-[10%] cursor-pointer"
-          title="The Forgotten Current: Rumored sea path to the spirit realm"
-          onclick="fillDestination('boat')"
-        />
-        <img
-          src="https://i.postimg.cc/9QzHkbDv/icon-resort.png"
-          class="absolute top-[10%] left-[80%] h-[10%] cursor-pointer"
-          title="Secrets of the Sands: An enchanted oasis of memory and mirage"
-          onclick="fillDestination('resort')"
-        />
-      </div>
+        id="map"
+        class="relative border rounded overflow-hidden shadow-lg w-full h-96 max-w-3xl mx-auto mb-6"
+      ></div>
 
       <div id="directions-output" class="text-lg mb-6"></div>
 
@@ -139,10 +124,55 @@
       const chatInput = document.getElementById("chat-input");
       const chatLog = document.getElementById("chat-log");
 
+      const start = [37.7749, -122.4194];
+      const locations = {
+        volcano: [37.7799, -122.418],
+        maze: [37.7765, -122.424],
+        boat: [37.772, -122.414],
+        resort: [37.7785, -122.412]
+      };
+      const icons = {
+        volcano: "https://i.postimg.cc/JnNfXdFB/icon-volcano.png",
+        maze: "https://i.postimg.cc/xjyQNcrF/icon-maze.png",
+        boat: "https://i.postimg.cc/7ZQwPdvH/icon-boat.png",
+        resort: "https://i.postimg.cc/9QzHkbDv/icon-resort.png"
+      };
+
+      const map = L.map("map").setView(start, 15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      Object.entries(locations).forEach(([key, coords]) => {
+        L.marker(coords, {
+          icon: L.icon({ iconUrl: icons[key], iconSize: [40, 40] })
+        })
+          .addTo(map)
+          .on("click", () => fillDestination(key));
+      });
+
+      let routingControl;
+
+      function showRoute(destKey) {
+        const dest = locations[destKey.toLowerCase()];
+        if (!dest) return;
+        if (routingControl) {
+          map.removeControl(routingControl);
+        }
+        routingControl = L.Routing.control({
+          waypoints: [L.latLng(start), L.latLng(dest)],
+          addWaypoints: false,
+          draggableWaypoints: false,
+          routeWhileDragging: false
+        }).addTo(map);
+      }
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const to = document.getElementById("to").value.trim();
         if (!to) return;
+
+        showRoute(to);
 
         const res = await fetch(`/directions?to=${encodeURIComponent(to)}`);
         const data = await res.json();
@@ -183,28 +213,38 @@
 
       function fillDestination(location) {
         document.getElementById("to").value = location;
+        showRoute(location);
       }
 
       chatToggle.onclick = () => chatbot.classList.toggle("hidden");
 
       chatInput.addEventListener("keypress", function (e) {
         if (e.key === "Enter") {
+          e.preventDefault();
           const msg = chatInput.value;
           chatLog.innerHTML += `<div><b>You:</b> ${msg}</div>`;
-          chatLog.innerHTML += `<div><b>Finn:</b> Hmm... let me check the scrolls for that!</div>`;
+          fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg })
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              chatLog.innerHTML += `<div><b>Finn:</b> ${data.reply}</div>`;
+            });
           chatInput.value = "";
         }
       });
 
       function presetChat(topic) {
-        const responses = {
-          "Ashen Secrets": "The volcano’s tunnels lead to forgotten fire rituals...",
-          "Secrets of the Sands": "Ancient ruins beneath the oasis whisper forgotten names...",
-          "The Forgotten Current": "Many who sailed here vanished into sea-foam legends...",
-          "Maze of Whisper": "The maze reconfigures itself under moonlight. Stay alert..."
+        const mapToKeyword = {
+          "Ashen Secrets": "volcano",
+          "Secrets of the Sands": "resort",
+          "The Forgotten Current": "boat",
+          "Maze of Whisper": "maze"
         };
-        chatLog.innerHTML += "<div><b>You:</b> " + topic + "</div>";
-        chatLog.innerHTML += "<div><b>Finn:</b> " + (responses[topic] || "Let me look into that...") + "</div>";
+        chatInput.value = mapToKeyword[topic] || topic;
+        chatInput.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter" }));
       }
 
       renderHistory();
