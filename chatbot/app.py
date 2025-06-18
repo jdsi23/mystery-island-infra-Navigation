@@ -22,6 +22,10 @@ def chat():
         "resort": "Tiki Resort is just beyond the glowing portals!",
         "secrets of the sands": "Tiki Resort is just beyond the glowing portals!",
         "tiki resort": "Tiki Resort is just beyond the glowing portals!",
+        "maze": "The Maze of Whispers is hidden past the stone archway.",
+        "maze of whisper": "The Maze of Whispers is hidden past the stone archway.",
+        "resort": "Tiki Resort is just beyond the glowing portals!",
+        "secrets of the sands": "Tiki Resort is just beyond the glowing portals!",
         "map": "You can find the full Mystery Island map on the homepage.",
         "directions": "You can find the full Mystery Island map on the homepage.",
         "food": "Try the Jungle Café near the central hut for some snacks!"

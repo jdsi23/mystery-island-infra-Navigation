@@ -5,10 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mystery Island Navigation</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='client/src/index.css') }}">
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
+      integrity="sha256-sA+e2t72rj0sCTJtktoupgX9BfiNjT8nCDbY6iF0Xpw="
+
       crossorigin=""
     />
     <link
@@ -17,6 +25,11 @@
     />
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+
+
+      integrity="sha256-o9N1j7kPtvk2gICW/0FBwABp0bJzOF7BtL4zyLuf5rE="
+
+
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
@@ -125,12 +138,21 @@
       const chatInput = document.getElementById("chat-input");
       const chatLog = document.getElementById("chat-log");
 
+
       const start = [33.8121, -117.9190];
       const locations = {
         volcano: [33.8131, -117.9180],
         maze: [33.8115, -117.9200],
         boat: [33.8110, -117.9210],
         resort: [33.8135, -117.9205]
+
+      const start = [37.7749, -122.4194];
+      const locations = {
+        volcano: [37.7799, -122.418],
+        maze: [37.7765, -122.424],
+        boat: [37.772, -122.414],
+        resort: [37.7785, -122.412]
+
       };
       const icons = {
         volcano: "https://i.postimg.cc/JnNfXdFB/icon-volcano.png",
